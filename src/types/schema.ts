@@ -17,5 +17,6 @@ export const todoSchema = z.object({
   title: z
     .string()
     .trim()
-    .min(3, { message: "Title must be 3 characters required!" }),
+    .min(1, { message: "Title required!" })
+    .min(5, { message: "Title must be 3 characters required!" }),
 });

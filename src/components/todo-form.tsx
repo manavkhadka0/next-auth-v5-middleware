@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import TodoList from "@/components/todo-list";
+import { todoSchema } from "@/types/schema";
 
 const todoInitialState = {
   title: "",
@@ -18,10 +19,6 @@ const todoInitialState = {
     title: "" as string | string[],
   },
 };
-
-const todoSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-});
 
 type Todo = {
   id: number;
