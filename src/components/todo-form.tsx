@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { z } from "zod";
 import {
   addTodoAction,
   getTodosAction,
   removeTodoAction,
-  Todo,
   updateTodoAction,
 } from "@/utils/todo-functions/todo-function";
 import { Input } from "@/components/ui/input";
@@ -15,13 +15,28 @@ import TodoList from "@/components/todo-list";
 const todoInitialState = {
   title: "",
   errors: {
-    title: "",
+    title: "" as string | string[],
   },
 };
 
+const todoSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+});
+
+type Todo = {
+  id: number;
+  title: string;
+  isCompleted: boolean;
+};
+
 const TodoForm = () => {
-  const [formState, setFormState] = useState(todoInitialState);
-  const [todos, setTodos] = useState<[] | Todo[]>([]);
+  const [formState, setFormState] = useState({
+    title: "",
+    errors: {
+      title: "" as string | string[],
+    },
+  });
+  const [todos, setTodos] = useState<Todo[]>([]);
 
   useEffect(() => {
     const fetchTodos = async () => {
@@ -34,18 +49,24 @@ const TodoForm = () => {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    const formData = new FormData(event.target as HTMLFormElement);
+    const title = formData.get("title") as string;
 
-    if (!formState.title) {
+    const validatedFields = todoSchema.safeParse({ title });
+
+    if (!validatedFields.success) {
       setFormState({
         ...formState,
         errors: {
-          title: "Title is required",
+          title:
+            validatedFields.error.flatten().fieldErrors.title?.[0] ||
+            "Invalid title",
         },
       });
       return;
     }
 
-    await addTodoAction({ title: formState.title });
+    await addTodoAction({ title: validatedFields.data.title });
 
     const updatedTodos = await getTodosAction();
     setTodos(updatedTodos);
@@ -88,20 +109,21 @@ const TodoForm = () => {
           onChange={handleChange}
         />
         {formState.errors.title && (
-          <p className="text-red-600">{formState.errors.title}</p>
+          <p className="text-red-600">
+            {Array.isArray(formState.errors.title)
+              ? formState.errors.title.join(", ")
+              : formState.errors.title}
+          </p>
         )}
         <Button variant="secondary" className="w-full" type="submit">
           Add Todo
         </Button>
       </form>
-      {todos.length === 0 && <p className="text-white">No todos found</p>}
-      {todos.length && (
-        <TodoList
-          todos={todos}
-          onRemove={handleRemove}
-          onToggleComplete={handleToggleComplete}
-        />
-      )}
+      <TodoList
+        todos={todos}
+        onRemove={handleRemove}
+        onToggleComplete={handleToggleComplete}
+      />
     </div>
   );
 };
